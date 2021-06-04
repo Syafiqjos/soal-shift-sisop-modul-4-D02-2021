@@ -179,7 +179,7 @@ int recursively_encode_atoz(char *fpath){
                 char path1[buffer_size];
 
                 char old_name[buffer_size];
-                char *dir_name = get_dir_name(fpath);
+                char *dir_name = fpath;
                 char *file_name = get_file_name(dp->d_name);
 
                 sprintf(old_name, "%s/%s", dir_name, dp->d_name);
@@ -192,7 +192,7 @@ int recursively_encode_atoz(char *fpath){
                 char path2[buffer_size];
 
                 char old_name[buffer_size];
-                char *dir_name = get_dir_name(fpath);
+                char *dir_name = fpath;
                 char *file_name = get_file_name(dp->d_name);
 
                 sprintf(old_name, "%s/%s", dir_name, dp->d_name);
