@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <sys/time.h>
 
-static  const  char *dirpath = "/home/jessica/Downloads";
+static  const  char *dirpath = "/home/alecetra/Downloads";
 
 void encrypt (char* str){
     int i=0;
@@ -181,7 +181,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
 static int xmp_rmdir(const char *path){
     //printf("Enter => rmdir\n");
     int res;
-    char fpath[1000] = "/home/jessica/Downloads";
+    char fpath[1000] = "/home/alecetra/Downloads";
     strcat(fpath, path);
     char paths[100];
     strcpy(paths, path);

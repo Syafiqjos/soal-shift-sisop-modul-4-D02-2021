@@ -8,15 +8,42 @@
 #include <errno.h>
 #include <sys/time.h>
 
-static  int  xmp_getattr(const char *path, struct stat *stbuf)
+static  const  char *dirpath = "/home/alecetra/Downloads";
+
+static  int  xmp_getattr(const char *path, struct stat *st)
 {
-    int res;
-    res = lstat(path, stbuf);
+    char fpath[1028];
 
-    if (res == -1) return -errno;
-    return 0;
+    sprintf(fpath, "%s%s", dirpath, path);
+    printf("GetAttr : %s\n", fpath);
+
+  //  int res;
+//    res = lstat(path, stbuf);
+
+//    if (res == -1) return -errno;
+//    return 0;
+//
+
+
+	st->st_uid = getuid(); // The owner of the file/directory is the user who mounted the filesystem
+	st->st_gid = getgid(); // The group of the file/directory is the same as the group of the user who mounted the filesystem
+	st->st_atime = time( NULL ); // The last "a"ccess of the file/directory is right now
+	st->st_mtime = time( NULL ); // The last "m"odification of the file/directory is right now
+				
+	if ( strcmp( path, "/" ) == 0 )
+						{
+		st->st_mode = S_IFDIR | 0755;
+		st->st_nlink = 2; // Why "two" hardlinks instead of "one"? The answer is here: http://unix.stackexchange.com/a/101536
+												}
+	else
+		{
+		st->st_mode = S_IFREG | 0644;
+		st->st_nlink = 1;
+		st->st_size = 1024;
+		}
+		
+	return 0;
 }
-
 
 
 static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
@@ -26,7 +53,13 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
     (void) offset;
     (void) fi;
 
-    dp = opendir(path);
+
+    char fpath[1028];
+
+    sprintf(fpath, "%s%s", dirpath, path);
+    printf("ReadDir : %s\n", fpath);
+
+    dp = opendir(fpath);
 
     if (dp == NULL) return -errno;
 
@@ -52,7 +85,12 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
     int res;
     (void) fi;
 
-    fd = open(path, O_RDONLY);
+    char fpath[1028];
+
+    sprintf(fpath, "%s%s", dirpath, path);
+    printf("Read : %s\n", fpath);
+
+    fd = open(fpath, O_RDONLY);
 
     if (fd == -1) return -errno;
 
