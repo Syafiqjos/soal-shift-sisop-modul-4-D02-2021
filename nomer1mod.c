@@ -16,8 +16,9 @@
 #include <ctype.h>
 #include <dirent.h>
 
-static  const  char *dirpath = "/home/alecetra/Downloads";
+static  const  char *dirpath = "/home/jessica/Downloads";
 static const int buffer_size = 1024;
+static const char *log_path = "/home/jessica/SinSeiFS.log";
 
 char *get_dir_name(char *path){
     char *filename = malloc(sizeof(char) * buffer_size);
@@ -117,6 +118,43 @@ char *get_special_directory_name(char *path){
     return filename;
 }
 
+int log_info_command(char *command, char *from, char *to){
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	char mains[1000];
+    if(to == NULL){
+        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d::%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from);
+    }else{
+        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d::%s::%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
+    }
+	printf("%s", mains);
+	FILE *foutput = fopen(log_path, "a+");
+	fputs(mains, foutput);
+	fclose(foutput);
+	return 1;
+}
+
+int log_warning_command(char *command, char *from, char *to){
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	char mains[1000];
+    if(to == NULL){
+        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d::%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from);
+    }else{
+        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d::%s::%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
+    }
+	printf("%s", mains);
+	FILE *foutput = fopen(log_path, "a+");
+	fputs(mains, foutput);
+	fclose(foutput);
+	return 1;
+}
+
+
 bool check_is_special_directory(char *path){
     return strstr(path, "A_is_a_") == path;
 }
@@ -188,6 +226,7 @@ int recursively_encode_atoz(char *fpath){
                 rename(old_name, path1);
 
                 printf("Rename from : %s to %s\n", old_name, path1);
+                log_info_command("RENAME", old_name, path1);
             } else if(dp->d_type == DT_DIR) {
                 char path2[buffer_size];
 
@@ -201,7 +240,7 @@ int recursively_encode_atoz(char *fpath){
                 rename(old_name, path2);
 
                 printf("Rename from : %s to %s\n", old_name, path2);
-
+                log_info_command("RENAME", old_name, path2);
                 recursively_encode_atoz(path2);
             }
 	     }
