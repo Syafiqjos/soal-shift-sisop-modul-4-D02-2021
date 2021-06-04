@@ -6,7 +6,6 @@
 #include <ctype.h>
 #include <dirent.h>
 
-//dasar, ngambil filename.txt
 char *get_file_name(char *path){
     char *filename = malloc(sizeof(char) * 256);
     int n = strlen(path);
@@ -20,7 +19,6 @@ char *get_file_name(char *path){
     return filename;
 }
 
-//dasar, ngambil filename aja
 char *get_file_name_only(char *path){
     char *filename = malloc(sizeof(char) * 256);
     char *temppath = get_file_name(path);
@@ -36,7 +34,6 @@ char *get_file_name_only(char *path){
     return filename;
 }
 
-//dasar, ngambil .txt aja
 char *get_extension_name(char *path){
     char *filename = malloc(sizeof(char) * 256);
     char *temppath = get_file_name(path);
@@ -53,7 +50,6 @@ char *get_extension_name(char *path){
     return filename;
 }
 
-//buat nomer 3
 int get_lowercase_diff_decimal(char *path){
     int val = 0;
     
@@ -71,7 +67,6 @@ int get_lowercase_diff_decimal(char *path){
     return val;
 }
 
-//buat nomer 3
 char *get_special_directory_name(char *path){
     char *filename = malloc(sizeof(char) * 256);
     char *filename_only = get_file_name_only(path);
@@ -96,17 +91,16 @@ char *get_special_directory_name(char *path){
     return filename;
 }
 
-//buat nomer 3, check kalo dia special directory
 bool check_is_special_directory(char *path){
     return strstr(path, "A_is_a_") == path;
 }
 
-//buat nomer 3, panggil ketika rename
 void change_to_special_directory(char *path){
-    if (check_is_special_directory(path)){
-        //ubah ke spesial directory
+    if (check_is_special_directory(path))
+    {
+
     } else {
-        //ubah ke normal directory
+
     }
 }
 
