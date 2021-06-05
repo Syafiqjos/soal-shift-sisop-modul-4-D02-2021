@@ -395,130 +395,202 @@ int get_rx_mode(char *path){
 }
 
 //mode << 0 == none,1 << 0 = atoz,1 << 1 = rx_1, << 2 = rx_2, << 3 = special
-int get_encryption_mode(char *path, int mode, bool force_return){
+int get_encryption_mode(char *path){
     if (strlen(path) == 0){
-        return mode;
+        return 0;
     }
     char *temp = path;
-    char *fname = get_file_name(temp);
+
+    int mode = 0;
 
     //printf("REC : %s -> %d\n", fname, mode);
+    char *tok = strtok(temp, "/");
+    char fpath[buffer_size];
+    fpath[0] = 0;
 
-    if (strstr(fname, "A_is_a_") == fname){
-        mode |= 1 << 3;
-        return mode;
+    sprintf(fpath, "%s", dirpath);
+
+    while (tok){
+        sprintf(fpath + strlen(fpath), "/%s", tok);
+
+        if (strstr(tok, "A_is_a_") == tok){
+            mode |= 1 << 3;
+            return mode;
+        }
+        else if (strstr(tok, "AtoZ_") == tok){
+            mode |= 1 << 0;
+        } else if (strstr(tok, "RX_") == tok && get_rx_mode(fpath) == 1){
+            printf("SUCESS MORE ACESSS\n");
+            mode |= 1 << 1;
+        } else if (strstr(tok, "RX_") == tok && get_rx_mode(fpath) == 2){
+            mode |= 1 << 2;
+        }
+        tok = strtok(NULL, "/");
     }
-    else if (strstr(fname, "AtoZ_") == fname){
-        mode |= 1 << 0;
-        if (force_return) return mode;
-    } else if (strstr(fname, "RX_") == fname && get_rx_mode(path) == 1){
-        printf("SUCESS MORE ACESSS\n");
-        mode |= 1 << 1;
-        if (force_return) return mode;
-    } else if (strstr(fname, "RX_") == fname && get_rx_mode(path) == 2){
-        mode |= 1 << 2;
-        if (force_return) return mode;
-    }
 
-    //printf("REC : %s -> %d\n", path, mode);
-
-    temp = get_dir_name(path);
-
-    int moden = get_encryption_mode(temp, mode, force_return);
-
-    free(temp);
-    return moden;
+    return mode;
 }
 
 bool is_decrypting = false;
 
-char *get_encryption_path(const char * path, bool force_return){
+char *get_encryption_path(const char * path){
+    if (strlen(path) == 0 || path[0] == 0){
+        return "/";
+    }
+
     char *fpath = malloc(buffer_size);
     char temp[buffer_size];
     
+    fpath[0] = 0;
+
     sprintf(temp, "%s", path);
-    int enc_mode = get_encryption_mode(get_dir_name(temp), 0, force_return);
 
-    //printf("ENC I GOT : %d\n", enc_mode);
+    char *test = strtok(temp, "/");
 
-    if(enc_mode == 0){
-        sprintf(fpath, "%s%s", dirpath, path);
-    } else if ((enc_mode & (1 << 0))){
-        //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
-        sprintf(fpath, "%s", dirpath);
-        char *test = strtok(temp, "/");
-        bool trig = false;
-        while (test){
-            int n = strlen(fpath);
-            
-            if (trig) sprintf(fpath + n, "/%s", encrypt_atbash(test));
-            else sprintf(fpath + n, "/%s", test);
-            
-            if (strstr(test, "AtoZ_") == test){
-                trig = true;
-            }
-            test = strtok(NULL, "/");
+    int enc = 0;
+
+    while (test){
+        int n = strlen(fpath);
+
+        if (enc == 0){
+            sprintf(fpath + n, "/%s", test);
+        } else if (enc & (1 << 0)){
+            sprintf(fpath + n, "/%s", encrypt_atbash(test));
+        } else if (enc & (1 << 1)){
+            sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(test)));
+        } else if (enc & (1 << 2)){
+            sprintf(fpath + n, "/%s", encrypt_vignere(encrypt_atbash(test)));
+        } else if (enc & (1 << 3)){
+            sprintf(fpath + n, "/%s", test);
         }
-    } else if (enc_mode & (1 << 1)){
-        //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
-        sprintf(fpath, "%s", dirpath);
-        char *test = strtok(temp, "/");
-        bool trig = false;
-        printf("PREPARE RX 1\n");
-        while (test){
-            int n = strlen(fpath);
-            
-            if (trig) {
-                if (is_decrypting){
-                    printf("Kimiawa\n");
-                    sprintf(fpath + n, "/%s", encrypt_atbash(encrypt_rot13(test)));
-                } else {
-                    sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(test)));
-                }
-            }
-            else sprintf(fpath + n, "/%s", test);
-            
-            if (strstr(test, "AtoZ_") == test){
-                trig = true;
-            }
-            test = strtok(NULL, "/");
-        }
-    } else if (enc_mode & (1 << 2)){
-        //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
-        sprintf(fpath, "%s", dirpath);
-        char *test = strtok(temp, "/");
-        bool trig = false;
-        while (test){
-            int n = strlen(fpath);
-            
-            if (trig) sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(test)));
-            else sprintf(fpath + n, "/%s", test);
-            
-            if (strstr(test, "AtoZ_") == test){
-                trig = true;
-            }
-            test = strtok(NULL, "/");
-        }
-    } else if (enc_mode & (1 << 3)){
-        //sprintf(fpath, "%s%s", dirpath, path);
-        //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), get_special_directory_name(temp));
+
+        enc = get_encryption_mode(test);
+
+        test = strtok(NULL, "/");
     }
 
     return fpath;
 }
 
+//mode << 0 == none,1 << 0 = atoz,1 << 1 = rx_1, << 2 = rx_2, << 3 = special
+// int get_encryption_mode(char *path, int mode, bool force_return){
+//     if (strlen(path) == 0){
+//         return mode;
+//     }
+//     char *temp = path;
+//     char *fname = get_file_name(temp);
+
+//     //printf("REC : %s -> %d\n", fname, mode);
+
+//     if (strstr(fname, "A_is_a_") == fname){
+//         mode |= 1 << 3;
+//         return mode;
+//     }
+//     else if (strstr(fname, "AtoZ_") == fname){
+//         mode |= 1 << 0;
+//         if (force_return) return mode;
+//     } else if (strstr(fname, "RX_") == fname && get_rx_mode(path) == 1){
+//         printf("SUCESS MORE ACESSS\n");
+//         mode |= 1 << 1;
+//         if (force_return) return mode;
+//     } else if (strstr(fname, "RX_") == fname && get_rx_mode(path) == 2){
+//         mode |= 1 << 2;
+//         if (force_return) return mode;
+//     }
+
+//     //printf("REC : %s -> %d\n", path, mode);
+
+//     temp = get_dir_name(path);
+
+//     int moden = get_encryption_mode(temp, mode, force_return);
+
+//     free(temp);
+//     return moden;
+// }
+
+// bool is_decrypting = false;
+
+// char *get_encryption_path(const char * path, bool force_return){
+//     char *fpath = malloc(buffer_size);
+//     char temp[buffer_size];
+    
+//     sprintf(temp, "%s", path);
+//     int enc_mode = get_encryption_mode(get_dir_name(temp), 0, force_return);
+
+//     //printf("ENC I GOT : %d\n", enc_mode);
+
+//     if(enc_mode == 0){
+//         sprintf(fpath, "%s%s", dirpath, path);
+//     } else if ((enc_mode & (1 << 0))){
+//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
+//         sprintf(fpath, "%s", dirpath);
+//         char *test = strtok(temp, "/");
+//         bool trig = false;
+//         while (test){
+//             int n = strlen(fpath);
+            
+//             if (trig) sprintf(fpath + n, "/%s", encrypt_atbash(test));
+//             else sprintf(fpath + n, "/%s", test);
+            
+//             if (strstr(test, "AtoZ_") == test){
+//                 trig = true;
+//             }
+//             test = strtok(NULL, "/");
+//         }
+//     } else if (enc_mode & (1 << 1)){
+//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
+//         sprintf(fpath, "%s", dirpath);
+//         char *test = strtok(temp, "/");
+//         bool trig = false;
+//         printf("PREPARE RX 1\n");
+//         while (test){
+//             int n = strlen(fpath);
+            
+//             if (trig) {
+//                 if (is_decrypting){
+//                     printf("Kimiawa\n");
+//                     sprintf(fpath + n, "/%s", encrypt_atbash(encrypt_rot13(test)));
+//                 } else {
+//                     sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(test)));
+//                 }
+//             }
+//             else sprintf(fpath + n, "/%s", test);
+            
+//             if (strstr(test, "AtoZ_") == test){
+//                 trig = true;
+//             }
+//             test = strtok(NULL, "/");
+//         }
+//     } else if (enc_mode & (1 << 2)){
+//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
+//         sprintf(fpath, "%s", dirpath);
+//         char *test = strtok(temp, "/");
+//         bool trig = false;
+//         while (test){
+//             int n = strlen(fpath);
+            
+//             if (trig) sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(test)));
+//             else sprintf(fpath + n, "/%s", test);
+            
+//             if (strstr(test, "AtoZ_") == test){
+//                 trig = true;
+//             }
+//             test = strtok(NULL, "/");
+//         }
+//     } else if (enc_mode & (1 << 3)){
+//         //sprintf(fpath, "%s%s", dirpath, path);
+//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), get_special_directory_name(temp));
+//     }
+
+//     return fpath;
+// }
+
 bool force_sebenarnya = false;
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
-    char *fpath;
-
-    if (force_sebenarnya){
-        fpath = malloc(buffer_size);
-        sprintf(fpath, "%s%s", dirpath, path);
-    } else {
-        fpath = get_encryption_path(path, false);
-    }
+    char fpath[buffer_size];
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
 
     printf("GetAttr : %s\n", fpath);
 
@@ -547,15 +619,9 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 
     sprintf(fpath, "%s%s/%s", dirpath, leftpath, rightpath);
 
-    int enc_mode = get_encryption_mode(fpath, 0, false);
+    int enc_mode = get_encryption_mode(temp);
 
-    if (enc_mode == 0){
-        
-    } else if ((enc_mode & 1)){
-        sprintf(fpath, "%s", get_encryption_path(path, false));
-    }
-
-    printf("ReadDir : %s\n", fpath);
+    printf("ReadDir : %s\n", temp);
 
     printf("ENC MODE : %d\n", enc_mode);
 
@@ -616,7 +682,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-    char *fpath = get_encryption_path(path, false);
+    char *fpath = get_encryption_path(path);
 
     printf("ReadFile : %s\n", fpath);
 
@@ -641,7 +707,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
 static int xmp_mkdir(const char * path, mode_t mode){
     char temp[buffer_size];
     sprintf(temp, "%s", path);
-    char *temp2 = get_encryption_path(get_dir_name(temp), false);
+    char *temp2 = get_encryption_path(temp);
     char fpath[buffer_size];
     sprintf(fpath, "%s/%s", temp2, get_file_name(temp));
 
@@ -668,8 +734,10 @@ static int xmp_mkdir(const char * path, mode_t mode){
 
 static int xmp_rename(const char *from, const char *to)
 {
-    char *fpath = get_encryption_path(from, false);
-    char *tpath = get_encryption_path(to, false);
+    char fpath[buffer_size];
+    char tpath[buffer_size];
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(from));
+    sprintf(tpath, "%s%s", dirpath, get_encryption_path(to));
 
     //sprintf(fpath, "%s%s", dirpath, from);
     //sprintf(tpath, "%s%s", dirpath, to);
@@ -691,7 +759,7 @@ static int xmp_rename(const char *from, const char *to)
 
 static int xmp_unlink(const char *path)
 {
-    char *fpath = get_encryption_path(path, false);
+    char *fpath = get_encryption_path(path);
     
     printf("Unlink : %s\n", fpath);
 
@@ -705,7 +773,7 @@ static int xmp_unlink(const char *path)
 }
 
 static int xmp_rmdir(const char *path){
-    char *fpath = get_encryption_path(path, false);
+    char *fpath = get_encryption_path(path);
 
     printf("RmDir : %s\n", fpath);
     
@@ -718,7 +786,7 @@ static int xmp_rmdir(const char *path){
 
 static int xmp_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-    char *fpath = get_encryption_path(path, false);
+    char *fpath = get_encryption_path(path);
 
     printf("Write : %s\n", fpath);
 
@@ -742,7 +810,7 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     char temp[buffer_size];
     sprintf(temp, "%s", path);
-    char *temp2 = get_encryption_path(get_dir_name(temp), false);
+    char *temp2 = get_encryption_path(temp);
     char fpath[buffer_size];
     sprintf(fpath, "%s/%s", temp2, get_file_name(temp));
 
@@ -770,7 +838,7 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 
 static int xmp_open(const char *path, struct fuse_file_info *fi)
 {
-    char *fpath = get_encryption_path(path, false);
+    char *fpath = get_encryption_path(path);
 
     printf("Open : %s\n", fpath);
 
