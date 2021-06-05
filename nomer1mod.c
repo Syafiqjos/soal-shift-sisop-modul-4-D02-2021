@@ -313,18 +313,18 @@ char *decrypt_vignere(char *str){
 // 0 == none, 1 == rx 1, 2 == rx 2
 int get_rx_mode(char *path){
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s/%s", dirpath, path, ".status_rx_1");
+    sprintf(fpath, "%s/%s", path, ".status_rx_1");
 
-    printf("check rx status : %s\n", fpath);
+    //printf("check rx status : %s\n", fpath);
 
     if (access(fpath, F_OK) == 0){
-        printf("rx value : %d\n", 1);
+        //printf("rx value : %d\n", 1);
         return 1;
     }
 
     sprintf(fpath, "%s%s/%s", dirpath, path, ".status_rx_2");
     if (access(fpath, F_OK) == 0){
-        printf("rx value : %d\n", 2);
+        //printf("rx value : %d\n", 2);
         return 2;
     }
 
@@ -350,16 +350,17 @@ int get_encryption_mode(char *path){
     while (tok){
         sprintf(fpath + strlen(fpath), "/%s", tok);
 
+        int rx_mode = get_rx_mode(fpath);
+
         if (strstr(tok, "A_is_a_") == tok){
             mode |= 1 << 3;
             return mode;
         }
         else if (strstr(tok, "AtoZ_") == tok){
             mode |= 1 << 0;
-        } else if (strstr(tok, "RX_") == tok && get_rx_mode(fpath) == 1){
-            printf("SUCESS MORE ACESSS\n");
+        } else if (strstr(tok, "RX_") == tok && rx_mode == 1){
             mode |= 1 << 1;
-        } else if (strstr(tok, "RX_") == tok && get_rx_mode(fpath) == 2){
+        } else if (strstr(tok, "RX_") == tok && rx_mode == 2){
             mode |= 1 << 2;
         }
         tok = strtok(NULL, "/");
@@ -410,9 +411,13 @@ char *get_encryption_path(const char * path){
             sprintf(fpath + n, "/%s", encrypt_vignere(encrypt_atbash(jawaban)));
         } else if (enc & (1 << 3)){
             sprintf(fpath + n, "/%s", jawaban);
+            //sprintf(fpath + n, "/%s", get_special_directory_name(jawaban));
         }
 
-        enc = get_encryption_mode(jawaban);
+        int enc_temp = get_encryption_mode(jawaban);
+        if (!(enc & (1 << 3))){
+            enc = enc_temp;
+        }
 
         test = mid + 1;
     }
@@ -479,6 +484,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
             sprintf(temp, "/%s", encrypt_vignere(encrypt_atbash(de->d_name)));
         } else if (enc & (1 << 3)){
             sprintf(temp, "/%s", de->d_name);
+            //sprintf(temp, "/%s", get_special_directory_name(de->d_name));
         }
 
         memset(&st, 0, sizeof(st));
@@ -537,6 +543,14 @@ static int xmp_mkdir(const char * path, mode_t mode){
 	if (res == -1)
 		return -errno;
 
+    char temp[buffer_size];
+    sprintf(temp, "%s", get_file_name(fpath));
+    if (strstr(temp, "RX_") == temp){
+        sprintf(temp, "%s/%s", fpath, ".status_rx_1");
+        FILE *file = fopen(temp, "w");
+        fclose(file);
+    }
+
 	return 0;
 }
 
@@ -557,10 +571,24 @@ static int xmp_rename(const char *from, const char *to)
 
 	res = rename(fpath, tpath);
 
-    //recursively_check_encoding(fpath, tpath);
-
 	if (res == -1)
 		return -errno;
+
+    //rx status
+    char temp_rz1[buffer_size];
+    char temp[buffer_size];
+    sprintf(temp, "%s", get_file_name(tpath));
+    sprintf(temp_rz1, "%s/%s", tpath, ".status_rx_1");
+
+    //if status rz1 exists
+    if (access(temp_rz1, F_OK) == 0){
+        if (strstr(temp, "RX_") == temp){
+            unlink(temp_rz1);
+            sprintf(temp, "%s/%s", tpath, ".status_rx_2");
+            FILE *file = fopen(temp, "w");
+            fclose(file);
+        }
+    }
 
     log_info_command("RENAME", from, to);
 
