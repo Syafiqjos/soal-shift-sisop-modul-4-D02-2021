@@ -119,15 +119,15 @@ char *get_special_directory_name(char *path){
 }
 
 
-int log_info_command(char *command, char *from, char *to){
+int log_info_command(char *command, const char *from, const char *to){
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	char mains[1000];
     if(to == NULL){
-        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d::%s::%s\n",
+        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d:%s::%s\n",
 	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from);
     }else{
-        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d::%s::%s::%s\n",
+        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d:%s::%s::%s\n",
 	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
     }
 	printf("%s", mains);
@@ -137,15 +137,15 @@ int log_info_command(char *command, char *from, char *to){
 	return 1;
 }
 
-int log_warning_command(char *command, char *from, char *to){
+int log_warning_command(char *command, const char *from, const char *to){
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	char mains[1000];
     if(to == NULL){
-        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d::%s::%s\n",
+        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d:%s::%s\n",
 	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from);
     }else{
-        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d::%s::%s::%s\n",
+        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d:%s::%s::%s\n",
 	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
     }
 	printf("%s", mains);
@@ -310,69 +310,6 @@ char *decrypt_vignere(char *str){
 
 }
 
-// int recursively_encode_atoz(char *fpath){
-//     DIR *dir;
-//     struct dirent *dp;
-
-//     dir = opendir(fpath);
-
-//     if (dir == NULL) return -errno;
-
-//     while ((dp = readdir(dir)) != NULL) {
-//         if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0) {
-// 		    if(dp->d_type == DT_REG) {
-//                 char path1[buffer_size];
-
-//                 char old_name[buffer_size];
-//                 char *dir_name = fpath;
-//                 char *file_name = get_file_name(dp->d_name);
-
-//                 sprintf(old_name, "%s/%s", dir_name, dp->d_name);
-//                 sprintf(path1, "%s/%s", dir_name, encrypt_atbash(file_name));
-                
-//                 rename(old_name, path1);
-
-//                 printf("Rename from : %s to %s\n", old_name, path1);
-//                 log_info_command("RENAME", old_name, path1);
-//             } else if(dp->d_type == DT_DIR) {
-//                 char path2[buffer_size];
-
-//                 char old_name[buffer_size];
-//                 char *dir_name = fpath;
-//                 char *file_name = get_file_name(dp->d_name);
-
-//                 sprintf(old_name, "%s/%s", dir_name, dp->d_name);
-//                 sprintf(path2, "%s/%s", dir_name, encrypt_atbash(file_name));
-
-//                 rename(old_name, path2);
-
-//                 printf("Rename from : %s to %s\n", old_name, path2);
-//                 log_info_command("RENAME", old_name, path2);
-//                 recursively_encode_atoz(path2);
-//             }
-// 	     }
-//     }
-
-//     closedir(dir);
-//     return 0;
-// }
-
-// void recursively_check_encoding(char *from, char* to){
-//     char *toName = get_file_name(to);
-//     char *fromName = get_file_name(from);
-
-//     printf("REC : %s -> %s\n", fromName, toName);
-//     if(strstr(fromName, "AtoZ_") == NULL && strstr(toName, "AtoZ_") == toName){
-//         //encode atoz
-//         printf("Initiate encode AtoZ\n");
-//         recursively_encode_atoz(to);
-//     } else if (strstr(fromName, "AtoZ_") == fromName && strstr(toName, "AtoZ_") == NULL){
-//         //decode atoz
-//         printf("Initiate decode AtoZ\n");
-//         recursively_encode_atoz(to);
-//     }
-// }
-
 // 0 == none, 1 == rx 1, 2 == rx 2
 int get_rx_mode(char *path){
     char fpath[buffer_size];
@@ -445,7 +382,7 @@ char *get_encryption_path(const char * path){
 
     sprintf(temp, "%s", path);
 
-    printf("initial : %s\n", temp);
+    //printf("initial : %s\n", temp);
 
     char *test = temp;
     char *mid = temp;
@@ -480,123 +417,10 @@ char *get_encryption_path(const char * path){
         test = mid + 1;
     }
 
-    printf("end : %s\n", fpath);
+    //printf("end : %s\n", fpath);
 
     return fpath;
 }
-
-//mode << 0 == none,1 << 0 = atoz,1 << 1 = rx_1, << 2 = rx_2, << 3 = special
-// int get_encryption_mode(char *path, int mode, bool force_return){
-//     if (strlen(path) == 0){
-//         return mode;
-//     }
-//     char *temp = path;
-//     char *fname = get_file_name(temp);
-
-//     //printf("REC : %s -> %d\n", fname, mode);
-
-//     if (strstr(fname, "A_is_a_") == fname){
-//         mode |= 1 << 3;
-//         return mode;
-//     }
-//     else if (strstr(fname, "AtoZ_") == fname){
-//         mode |= 1 << 0;
-//         if (force_return) return mode;
-//     } else if (strstr(fname, "RX_") == fname && get_rx_mode(path) == 1){
-//         printf("SUCESS MORE ACESSS\n");
-//         mode |= 1 << 1;
-//         if (force_return) return mode;
-//     } else if (strstr(fname, "RX_") == fname && get_rx_mode(path) == 2){
-//         mode |= 1 << 2;
-//         if (force_return) return mode;
-//     }
-
-//     //printf("REC : %s -> %d\n", path, mode);
-
-//     temp = get_dir_name(path);
-
-//     int moden = get_encryption_mode(temp, mode, force_return);
-
-//     free(temp);
-//     return moden;
-// }
-
-// bool is_decrypting = false;
-
-// char *get_encryption_path(const char * path, bool force_return){
-//     char *fpath = malloc(buffer_size);
-//     char temp[buffer_size];
-    
-//     sprintf(temp, "%s", path);
-//     int enc_mode = get_encryption_mode(get_dir_name(temp), 0, force_return);
-
-//     //printf("ENC I GOT : %d\n", enc_mode);
-
-//     if(enc_mode == 0){
-//         sprintf(fpath, "%s%s", dirpath, path);
-//     } else if ((enc_mode & (1 << 0))){
-//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
-//         sprintf(fpath, "%s", dirpath);
-//         char *test = strtok(temp, "/");
-//         bool trig = false;
-//         while (test){
-//             int n = strlen(fpath);
-            
-//             if (trig) sprintf(fpath + n, "/%s", encrypt_atbash(test));
-//             else sprintf(fpath + n, "/%s", test);
-            
-//             if (strstr(test, "AtoZ_") == test){
-//                 trig = true;
-//             }
-//             test = strtok(NULL, "/");
-//         }
-//     } else if (enc_mode & (1 << 1)){
-//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
-//         sprintf(fpath, "%s", dirpath);
-//         char *test = strtok(temp, "/");
-//         bool trig = false;
-//         printf("PREPARE RX 1\n");
-//         while (test){
-//             int n = strlen(fpath);
-            
-//             if (trig) {
-//                 if (is_decrypting){
-//                     printf("Kimiawa\n");
-//                     sprintf(fpath + n, "/%s", encrypt_atbash(encrypt_rot13(test)));
-//                 } else {
-//                     sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(test)));
-//                 }
-//             }
-//             else sprintf(fpath + n, "/%s", test);
-            
-//             if (strstr(test, "AtoZ_") == test){
-//                 trig = true;
-//             }
-//             test = strtok(NULL, "/");
-//         }
-//     } else if (enc_mode & (1 << 2)){
-//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), encrypt_atbash(get_file_name(temp)));
-//         sprintf(fpath, "%s", dirpath);
-//         char *test = strtok(temp, "/");
-//         bool trig = false;
-//         while (test){
-//             int n = strlen(fpath);
-            
-//             if (trig) sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(test)));
-//             else sprintf(fpath + n, "/%s", test);
-            
-//             if (strstr(test, "AtoZ_") == test){
-//                 trig = true;
-//             }
-//             test = strtok(NULL, "/");
-//         }
-//     } else if (enc_mode & (1 << 3)){
-//         //sprintf(fpath, "%s%s", dirpath, path);
-//         //sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(temp), get_special_directory_name(temp));
-//     }
-
-//     return fpath;
-// }
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
@@ -637,6 +461,8 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 
     if (dp == NULL) return -errno;
 
+    //log_info_command("READDIR", path, NULL);
+
     while ((de = readdir(dp)) != NULL) {
         if (de->d_name[0] == '.') continue;
         struct stat st;
@@ -659,8 +485,8 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
         st.st_ino = de->d_ino;
         st.st_mode = de->d_type << 12;
 
-        printf("to be filler : %s\n", de->d_name);
-        printf("?? -> %s\n", temp);
+        //printf("to be filler : %s\n", de->d_name);
+        //printf("?? -> %s\n", temp);
 
         res = (filler(buf, temp + 1, &st, 0));
 
@@ -693,6 +519,8 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
     if (res == -1) res = -errno;
 
     close(fd);
+
+    log_info_command("READ", path, NULL);
 
     return res;
 }
@@ -734,6 +562,8 @@ static int xmp_rename(const char *from, const char *to)
 	if (res == -1)
 		return -errno;
 
+    log_info_command("RENAME", from, to);
+
 	return 0;
 }
 
@@ -750,6 +580,8 @@ static int xmp_unlink(const char *path)
 	if (res == -1)
 		return -errno;
 
+    log_warning_command("UNLINK", path, NULL);
+
 	return 0;
 }
 
@@ -763,6 +595,9 @@ static int xmp_rmdir(const char *path){
     if(res == -1){
         return -errno;
     }
+
+    log_warning_command("RMDIR", path, NULL);
+
     return 0;
 }
 
@@ -786,6 +621,9 @@ static int xmp_write(const char *path, const char *buf, size_t size, off_t offse
 		res = -errno;
 
 	close(fd);
+
+    log_info_command("WRITE", path, NULL);
+
 	return res;
 }
 
@@ -811,6 +649,8 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 	if (res == -1)
 		return -errno;
 
+    log_info_command("MKNOD", path, NULL);
+
 	return 0;
 }
 
@@ -828,6 +668,9 @@ static int xmp_open(const char *path, struct fuse_file_info *fi)
 		return -errno;
 
 	close(res);
+
+    log_info_command("OPEN", path, NULL);
+
 	return 0;
 }
 
