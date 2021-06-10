@@ -595,10 +595,14 @@ static int xmp_mkdir(const char * path, mode_t mode){
 
 static int xmp_rename(const char *from, const char *to)
 {
+    char temp[buffer_size];
+
+    sprintf(temp, "%s", from);
+
     char fpath[buffer_size];
     char tpath[buffer_size];
 
-    sprintf(fpath, "%s%s", dirpath, from);
+    sprintf(fpath, "%s%s", dirpath, get_dictionary_key(temp));
     sprintf(tpath, "%s%s", dirpath, to);
 
     printf("RenameFrom : %s\n", fpath);
