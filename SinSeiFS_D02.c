@@ -43,7 +43,7 @@ char *get_dictionary_key(char *value){
             return dictionary[i].key;
         }
     }
-    return NULL;
+    return value;
 }
 
 char *get_dictionary_value(char *key){
@@ -53,7 +53,7 @@ char *get_dictionary_value(char *key){
             return dictionary[i].value;
         }
     }
-    return NULL;
+    return key;
 }
 
 char *get_dir_name(char *path){
@@ -463,8 +463,14 @@ char *get_encryption_path(const char * path){
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
+    char castpath[buffer_size];
+    sprintf(castpath, "%s", path);
+
+    printf("Castpath : %s\n", castpath);
+
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_dictionary_key(castpath));
+    //sprintf(fpath, "%s%s", dirpath, castpath);
 
     printf("GetAttr : %s\n", fpath);
 
@@ -482,12 +488,18 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
     char fpath[buffer_size];
+    char path_non_constant[buffer_size];
 
-    sprintf(fpath, "%s%s", dirpath, path);    
+    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(path_non_constant, "%s", path);
 
     printf("ReadDir : %s\n", fpath);
 
     int res = 0;
+
+    int enc = get_encryption_mode(path_non_constant);
+
+    reset_dictionary();
 
     DIR *dp;
     struct dirent *de;
@@ -500,17 +512,39 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
         if (de->d_name[0] == '.') continue;
         struct stat st;
 
-        char temp[buffer_size];
+        char temp0[1024];
+        char temp[1024];
 
-        sprintf(temp, "/%s", de->d_name);
+        sprintf(temp0, "%s/%s", path, de->d_name);
+
+        if (enc == 0){
+            sprintf(temp, "%s/%s", path, de->d_name);
+        } else if (enc & (1 << 0)){
+            sprintf(temp, "%s/%s", path, encrypt_atbash(de->d_name));
+        } else if (enc & (1 << 1)){
+            sprintf(temp, "%s/%s", path, encrypt_rot13(encrypt_atbash(de->d_name)));
+        } else if (enc & (1 << 2)){
+            sprintf(temp, "%s/%s", path, encrypt_vignere(encrypt_atbash(de->d_name)));
+        } else if (enc & (1 << 3)){
+            sprintf(temp, "%s/%s", path, de->d_name);
+        }
+
+        add_dictionary(temp0, temp, enc);
 
         memset(&st, 0, sizeof(st));
         st.st_ino = de->d_ino;
         st.st_mode = de->d_type << 12;
 
-        res = (filler(buf, temp + 1, &st, 0));
+        res = (filler(buf, get_file_name(dictionary[dictionary_num - 1].value), &st, 0));
 
         if(res!=0) break;
+    }
+
+    printf("Dcit check\n");
+
+    int i = 0;
+    for (;i < dictionary_num;i++){
+        printf("%s -> %s\n", dictionary[i].key, dictionary[i].value);
     }
 
     closedir(dp);
