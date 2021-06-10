@@ -25,6 +25,8 @@ typedef struct {
 int dictionary_num = 0;
 dict_pair dictionary[128];
 
+char current_path[1024];
+
 void reset_dictionary(){
     dictionary_num = 0;
 }
@@ -490,8 +492,11 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
     char fpath[buffer_size];
     char path_non_constant[buffer_size];
 
+    sprintf(current_path, "%s", path);
     sprintf(fpath, "%s%s", dirpath, path);
     sprintf(path_non_constant, "%s", path);
+
+    printf("Current Path : %s\n", current_path);
 
     printf("ReadDir : %s\n", fpath);
 
@@ -581,7 +586,10 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
 
 static int xmp_mkdir(const char * path, mode_t mode){
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    char castpath[buffer_size];
+    sprintf(castpath, "%s", path);
+    //sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s/%s", dirpath, current_path, get_file_name(castpath));
 
     printf("MkDir : %s\n", fpath);
 
