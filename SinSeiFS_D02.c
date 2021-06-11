@@ -381,15 +381,17 @@ char *decrypt_vignere(char *str){
 int get_rx_mode(char *path){
     char fpath[buffer_size];
     sprintf(fpath, "%s/%s", path, ".status_rx_1");
+    // sprintf(fpath, "%s%s/%s", dirpath, path, ".status_rx_1");
 
-    //printf("check rx status : %s\n", fpath);
+    printf("check rx status : %s\n", fpath);
 
     if (access(fpath, F_OK) == 0){
         //printf("rx value : %d\n", 1);
         return 1;
     }
 
-    sprintf(fpath, "%s%s/%s", dirpath, path, ".status_rx_2");
+    // sprintf(fpath, "%s%s/%s", dirpath, path, ".status_rx_2");
+    sprintf(fpath, "%s/%s", path, ".status_rx_2");
     if (access(fpath, F_OK) == 0){
         //printf("rx value : %d\n", 2);
         return 2;
@@ -418,6 +420,8 @@ int get_encryption_mode(char *path){
         sprintf(fpath + strlen(fpath), "/%s", tok);
 
         int rx_mode = get_rx_mode(fpath);
+
+        printf("kok ngebug : %d\n", rx_mode);
 
         if (strstr(tok, "A_is_a_") == tok){
             mode |= 1 << 3;
@@ -529,9 +533,9 @@ char *get_decryption_path(const char * path){
         } else if (enc & (1 << 0)){
             sprintf(fpath + n, "/%s", encrypt_atbash(jawaban));
         } else if (enc & (1 << 1)){
-            sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(jawaban)));
+            sprintf(fpath + n, "/%s", encrypt_atbash(encrypt_rot13(jawaban)));
         } else if (enc & (1 << 2)){
-            sprintf(fpath + n, "/%s", decrypt_vignere(encrypt_atbash(jawaban)));
+            sprintf(fpath + n, "/%s", encrypt_atbash(decrypt_vignere(jawaban)));
         } else if (enc & (1 << 3)){
             //sprintf(fpath + n, "/%s", jawaban);
             sprintf(fpath + n, "/%s", get_special_directory_original_name(jawaban));
@@ -540,8 +544,8 @@ char *get_decryption_path(const char * path){
         // printf("decprocess : %s -> %d\n", fpath, enc);
 
         int enc_temp = get_encryption_mode(jawaban);
-        //if (!(enc & (1 << 3))){
-        if (enc == 0){
+        if (!(enc & (1 << 3))){
+        // if (enc == 0){
             enc = enc_temp;
         }
 
@@ -561,8 +565,6 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
     printf("GetAttr : %s\n", fpath);
 
 	int res;
-
-    is_decrypting = false;
 
 	res = lstat(fpath, stbuf);
 	if (res == -1)
@@ -617,8 +619,8 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
         st.st_ino = de->d_ino;
         st.st_mode = de->d_type << 12;
 
-        //printf("to be filler : %s\n", de->d_name);
-        //printf("?? -> %s\n", temp);
+        printf("to be filler : %d -> %s\n", enc, de->d_name);
+        printf("?? -> %s\n", temp);
 
         res = (filler(buf, temp + 1, &st, 0));
 
