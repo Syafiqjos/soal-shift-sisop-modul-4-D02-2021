@@ -683,6 +683,8 @@ static int xmp_mkdir(const char * path, mode_t mode){
         fclose(file);
     }
 
+    log_info_command("MKDIR", path, NULL);
+
 	return 0;
 }
 
