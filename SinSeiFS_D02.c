@@ -127,7 +127,7 @@ char *get_special_directory_name(char *path){
     free(filename_only);
     free(extension_only);
 
-    printf("SPECIAL : %s\n", filename);
+    // printf("SPECIAL : %s\n", filename);
 
     return filename;
 }
@@ -135,14 +135,29 @@ char *get_special_directory_name(char *path){
 char *get_special_directory_original_name(char *path){
     char *filename = malloc(sizeof(char) * buffer_size);
     char *filename_only = get_file_name_only(path);
-    char *extension_only = get_extension_name(path);
+    char *extension_only_name = get_file_name_only(get_extension_name(path));
+    char *extension_only_number = get_extension_name(get_extension_name(path));
+
+    int number_dot = 0;
+
+    int i = 0;
+    int n = strlen(path);
+    for (;i < n;i++){
+        if (path[i] == '.'){
+            number_dot++;
+        }
+    }
+
+    if (number_dot == 1){
+        extension_only_number = extension_only_name;
+    }
 
     int mask = 0;
-    int n = strlen(extension_only);
-    int i = 0;
+    n = strlen(extension_only_number);
+    i = 0;
     for (;i < n;i++){
         mask *= 10;
-        mask += (extension_only[i] - '0');
+        mask += (extension_only_number[i] - '0');
     }
 
     i = 0;
@@ -157,9 +172,17 @@ char *get_special_directory_original_name(char *path){
 
     filename[i] = '\0';
 
-    printf("NOT VERY SPECIAL : %s\n", filename);
+    char *ot = malloc(sizeof(char) * buffer_size);
 
-    return filename;
+    if (number_dot > 1){
+        sprintf(ot, "%s.%s", filename, extension_only_name);
+    } else {
+        sprintf(ot, "%s", filename);
+    }
+
+    // printf("NOT VERY SPECIAL : %s\n", ot);
+
+    return ot;
 }
 
 
@@ -610,7 +633,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
 
     printf("ReadFile : %s\n", fpath);
 
@@ -767,8 +790,13 @@ static int xmp_write(const char *path, const char *buf, size_t size, off_t offse
 
 static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 {
+    char castpath[buffer_size];
+    sprintf(castpath, "%s", path);
+    
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
+
+    //sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
+    sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(get_decryption_path(castpath)), get_file_name(castpath));
 
     printf("MakeNod : %s\n", fpath);
 
