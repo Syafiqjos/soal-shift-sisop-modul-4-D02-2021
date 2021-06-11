@@ -7,56 +7,18 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/time.h>
+
+#include <stdio.h>
+#include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <libgen.h>
 #include <ctype.h>
+#include <dirent.h>
 
 static  const  char *dirpath = "/home/alecetra/Downloads";
 static const char *log_path = "/home/alecetra/SinSeiFS.log";
 static const int buffer_size = 1024;
-
-typedef struct {
-    char key[1024];
-    char value[1024];
-    int status;
-} dict_pair;
-
-int dictionary_num = 0;
-dict_pair dictionary[128];
-
-char current_path[1024];
-
-void reset_dictionary(){
-    dictionary_num = 0;
-}
-
-void add_dictionary(char *key, char *value, int status){
-    sprintf(dictionary[dictionary_num].key, "%s", key);
-    sprintf(dictionary[dictionary_num].value, "%s", value);
-    dictionary[dictionary_num].status = status;
-    dictionary_num++;
-}
-
-char *get_dictionary_key(char *value){
-    int i = 0;
-    for (;i < dictionary_num;i++){
-        if (strcmp(dictionary[i].value, value) == 0){
-            return dictionary[i].key;
-        }
-    }
-    return value;
-}
-
-char *get_dictionary_value(char *key){
-    int i = 0;
-    for (;i < dictionary_num;i++){
-        if (strcmp(dictionary[i].key, key) == 0){
-            return dictionary[i].value;
-        }
-    }
-    return key;
-}
 
 char *get_dir_name(char *path){
     char *filename = malloc(sizeof(char) * buffer_size);
@@ -460,19 +422,74 @@ char *get_encryption_path(const char * path){
         test = mid + 1;
     }
 
-    return fpath;
+    //printf("end : %s\n", fpath);
+
+    return fpath + 1;
+}
+
+char *get_decryption_path(const char * path){
+    if (strlen(path) == 0 || path[0] == 0){
+        return "/";
+    }
+
+    char *fpath = malloc(buffer_size);
+    char temp[buffer_size];
+    
+    fpath[0] = 0;
+
+    sprintf(temp, "%s", path);
+
+    //printf("initial : %s\n", temp);
+
+    char *test = temp;
+    char *mid = temp;
+
+    int enc = 0;
+
+    while (*mid != '\0'){
+        int n = strlen(fpath);
+
+        mid = test;
+        while ((*mid) != '/' && (*mid) != '\0'){
+            mid++;
+        }
+
+        char jawaban[buffer_size];
+        snprintf(jawaban, mid - test + 1, "%s", test);
+
+        if (enc == 0){
+            sprintf(fpath + n, "/%s", jawaban);
+        } else if (enc & (1 << 0)){
+            sprintf(fpath + n, "/%s", encrypt_atbash(jawaban));
+        } else if (enc & (1 << 1)){
+            sprintf(fpath + n, "/%s", encrypt_rot13(encrypt_atbash(jawaban)));
+        } else if (enc & (1 << 2)){
+            sprintf(fpath + n, "/%s", decrypt_vignere(encrypt_atbash(jawaban)));
+        } else if (enc & (1 << 3)){
+            sprintf(fpath + n, "/%s", jawaban);
+            //sprintf(fpath + n, "/%s", get_special_directory_name(jawaban));
+        }
+
+        printf("decprocess : %s -> %d\n", fpath, enc);
+
+        int enc_temp = get_encryption_mode(jawaban);
+        //if (!(enc & (1 << 3))){
+        if (enc == 0){
+            enc = enc_temp;
+        }
+
+        test = mid + 1;
+    }
+
+    //printf("end : %s\n", fpath);
+
+    return fpath + 1;
 }
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
-    char castpath[buffer_size];
-    sprintf(castpath, "%s", path);
-
-    printf("Castpath : %s\n", castpath);
-
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_dictionary_key(castpath));
-    //sprintf(fpath, "%s%s", dirpath, castpath);
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
 
     printf("GetAttr : %s\n", fpath);
 
@@ -492,19 +509,14 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
     char fpath[buffer_size];
     char path_non_constant[buffer_size];
 
-    sprintf(current_path, "%s", path);
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
     sprintf(path_non_constant, "%s", path);
-
-    printf("Current Path : %s\n", current_path);
 
     printf("ReadDir : %s\n", fpath);
 
     int res = 0;
 
     int enc = get_encryption_mode(path_non_constant);
-
-    reset_dictionary();
 
     DIR *dp;
     struct dirent *de;
@@ -513,43 +525,37 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 
     if (dp == NULL) return -errno;
 
+    //log_info_command("READDIR", path, NULL);
+
     while ((de = readdir(dp)) != NULL) {
         if (de->d_name[0] == '.') continue;
         struct stat st;
 
-        char temp0[1024];
-        char temp[1024];
-
-        sprintf(temp0, "%s/%s", path, de->d_name);
+        char temp[buffer_size];
 
         if (enc == 0){
-            sprintf(temp, "%s/%s", path, de->d_name);
+            sprintf(temp, "/%s", de->d_name);
         } else if (enc & (1 << 0)){
-            sprintf(temp, "%s/%s", path, encrypt_atbash(de->d_name));
+            sprintf(temp, "/%s", encrypt_atbash(de->d_name));
         } else if (enc & (1 << 1)){
-            sprintf(temp, "%s/%s", path, encrypt_rot13(encrypt_atbash(de->d_name)));
+            sprintf(temp, "/%s", encrypt_rot13(encrypt_atbash(de->d_name)));
         } else if (enc & (1 << 2)){
-            sprintf(temp, "%s/%s", path, encrypt_vignere(encrypt_atbash(de->d_name)));
+            sprintf(temp, "/%s", encrypt_vignere(encrypt_atbash(de->d_name)));
         } else if (enc & (1 << 3)){
-            sprintf(temp, "%s/%s", path, de->d_name);
+            sprintf(temp, "/%s", de->d_name);
+            //sprintf(temp, "/%s", get_special_directory_name(de->d_name));
         }
-
-        add_dictionary(temp0, temp, enc);
 
         memset(&st, 0, sizeof(st));
         st.st_ino = de->d_ino;
         st.st_mode = de->d_type << 12;
 
-        res = (filler(buf, get_file_name(dictionary[dictionary_num - 1].value), &st, 0));
+        //printf("to be filler : %s\n", de->d_name);
+        //printf("?? -> %s\n", temp);
+
+        res = (filler(buf, temp + 1, &st, 0));
 
         if(res!=0) break;
-    }
-
-    printf("Dcit check\n");
-
-    int i = 0;
-    for (;i < dictionary_num;i++){
-        printf("%s -> %s\n", dictionary[i].key, dictionary[i].value);
     }
 
     closedir(dp);
@@ -560,7 +566,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
 
     printf("ReadFile : %s\n", fpath);
 
@@ -585,11 +591,9 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
 }
 
 static int xmp_mkdir(const char * path, mode_t mode){
+    printf("mkdiren\n");
     char fpath[buffer_size];
-    char castpath[buffer_size];
-    sprintf(castpath, "%s", path);
-    //sprintf(fpath, "%s%s", dirpath, path);
-    sprintf(fpath, "%s%s/%s", dirpath, current_path, get_file_name(castpath));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
 
     printf("MkDir : %s\n", fpath);
 
@@ -598,20 +602,26 @@ static int xmp_mkdir(const char * path, mode_t mode){
 	if (res == -1)
 		return -errno;
 
+    char temp[buffer_size];
+    sprintf(temp, "%s", get_file_name(fpath));
+    if (strstr(temp, "RX_") == temp){
+        sprintf(temp, "%s/%s", fpath, ".status_rx_1");
+        FILE *file = fopen(temp, "w");
+        fclose(file);
+    }
+
 	return 0;
 }
 
 static int xmp_rename(const char *from, const char *to)
 {
-    char temp[buffer_size];
-
-    sprintf(temp, "%s", from);
-
     char fpath[buffer_size];
     char tpath[buffer_size];
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(from));
+    sprintf(tpath, "%s%s", dirpath, get_encryption_path(to));
 
-    sprintf(fpath, "%s%s", dirpath, get_dictionary_key(temp));
-    sprintf(tpath, "%s%s", dirpath, to);
+    //sprintf(fpath, "%s%s", dirpath, from);
+    //sprintf(tpath, "%s%s", dirpath, to);
 
     printf("RenameFrom : %s\n", fpath);
     printf("RenameTo : %s\n", tpath);
@@ -623,6 +633,22 @@ static int xmp_rename(const char *from, const char *to)
 	if (res == -1)
 		return -errno;
 
+    //rx status
+    char temp_rz1[buffer_size];
+    char temp[buffer_size];
+    sprintf(temp, "%s", get_file_name(tpath));
+    sprintf(temp_rz1, "%s/%s", tpath, ".status_rx_1");
+
+    //if status rz1 exists
+    if (access(temp_rz1, F_OK) == 0){
+        if (strstr(temp, "RX_") == temp){
+            unlink(temp_rz1);
+            sprintf(temp, "%s/%s", tpath, ".status_rx_2");
+            FILE *file = fopen(temp, "w");
+            fclose(file);
+        }
+    }
+
     log_info_command("RENAME", from, to);
 
 	return 0;
@@ -631,7 +657,7 @@ static int xmp_rename(const char *from, const char *to)
 static int xmp_unlink(const char *path)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
     
     printf("Unlink : %s\n", fpath);
 
@@ -648,7 +674,7 @@ static int xmp_unlink(const char *path)
 
 static int xmp_rmdir(const char *path){
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
 
     printf("RmDir : %s\n", fpath);
     
@@ -665,7 +691,7 @@ static int xmp_rmdir(const char *path){
 static int xmp_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
 
     printf("Write : %s\n", fpath);
 
@@ -691,7 +717,7 @@ static int xmp_write(const char *path, const char *buf, size_t size, off_t offse
 static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
 
     printf("MakeNod : %s\n", fpath);
 
@@ -718,7 +744,7 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 static int xmp_open(const char *path, struct fuse_file_info *fi)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, path);
+    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
 
     printf("Open : %s\n", fpath);
 
@@ -750,8 +776,6 @@ static struct fuse_operations xmp_oper = {
 
 int  main(int  argc, char *argv[])
 {
-    printf("Fuse started.\n");
-    
     umask(0);
 
     return fuse_main(argc, argv, &xmp_oper, NULL);
