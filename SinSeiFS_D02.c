@@ -470,7 +470,7 @@ char *get_decryption_path(const char * path){
             //sprintf(fpath + n, "/%s", get_special_directory_name(jawaban));
         }
 
-        printf("decprocess : %s -> %d\n", fpath, enc);
+        // printf("decprocess : %s -> %d\n", fpath, enc);
 
         int enc_temp = get_encryption_mode(jawaban);
         //if (!(enc & (1 << 3))){
@@ -591,9 +591,13 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset, stru
 }
 
 static int xmp_mkdir(const char * path, mode_t mode){
-    printf("mkdiren\n");
+    char castpath[buffer_size];
+    sprintf(castpath, "%s", path);
+    
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
+
+    //sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
+    sprintf(fpath, "%s%s/%s", dirpath, get_dir_name(get_decryption_path(castpath)), get_file_name(castpath));
 
     printf("MkDir : %s\n", fpath);
 
@@ -615,10 +619,13 @@ static int xmp_mkdir(const char * path, mode_t mode){
 
 static int xmp_rename(const char *from, const char *to)
 {
+    char castpath[buffer_size];
+    sprintf(castpath, "%s", to);
+    
     char fpath[buffer_size];
     char tpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_encryption_path(from));
-    sprintf(tpath, "%s%s", dirpath, get_encryption_path(to));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(from));
+    sprintf(tpath, "%s%s/%s", dirpath, get_dir_name(get_decryption_path(castpath)), get_file_name(castpath));
 
     //sprintf(fpath, "%s%s", dirpath, from);
     //sprintf(tpath, "%s%s", dirpath, to);
@@ -657,7 +664,7 @@ static int xmp_rename(const char *from, const char *to)
 static int xmp_unlink(const char *path)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
     
     printf("Unlink : %s\n", fpath);
 
@@ -674,7 +681,7 @@ static int xmp_unlink(const char *path)
 
 static int xmp_rmdir(const char *path){
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
 
     printf("RmDir : %s\n", fpath);
     
@@ -691,7 +698,7 @@ static int xmp_rmdir(const char *path){
 static int xmp_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
 
     printf("Write : %s\n", fpath);
 
@@ -717,7 +724,7 @@ static int xmp_write(const char *path, const char *buf, size_t size, off_t offse
 static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
 
     printf("MakeNod : %s\n", fpath);
 
@@ -744,7 +751,7 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 static int xmp_open(const char *path, struct fuse_file_info *fi)
 {
     char fpath[buffer_size];
-    sprintf(fpath, "%s%s", dirpath, get_encryption_path(path));
+    sprintf(fpath, "%s%s", dirpath, get_decryption_path(path));
 
     printf("Open : %s\n", fpath);
 
