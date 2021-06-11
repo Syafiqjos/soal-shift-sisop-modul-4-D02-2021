@@ -63,6 +63,12 @@ char *get_file_name_only(char *path){
 
 char *get_extension_name(char *path){
     char *filename = malloc(sizeof(char) * buffer_size);
+    filename[0] = 0;
+
+    if (!strstr(path, ".")){
+        return filename;
+    }
+
     char *temppath = get_file_name(path);
     int n = strlen(temppath);
     int i = 0;
@@ -72,7 +78,9 @@ char *get_extension_name(char *path){
         }
     }
     i++;
-    sprintf(filename, "%s", temppath + i);
+    if (strlen(temppath + i) != 0){
+        sprintf(filename, "%s", temppath + i);
+    }
     free(temppath);
     return filename;
 }
@@ -110,10 +118,46 @@ char *get_special_directory_name(char *path){
         filename_only[i] = tolower(filename_only[i]);
     }
 
-    sprintf(filename, "%s.%s.%d", filename_only, extension_only, diff);
+    if (strlen(extension_only) == 0){
+        sprintf(filename, "%s.%d", filename_only, diff);
+    } else {
+        sprintf(filename, "%s.%s.%d", filename_only, extension_only, diff);
+    }
 
     free(filename_only);
     free(extension_only);
+
+    printf("SPECIAL : %s\n", filename);
+
+    return filename;
+}
+
+char *get_special_directory_original_name(char *path){
+    char *filename = malloc(sizeof(char) * buffer_size);
+    char *filename_only = get_file_name_only(path);
+    char *extension_only = get_extension_name(path);
+
+    int mask = 0;
+    int n = strlen(extension_only);
+    int i = 0;
+    for (;i < n;i++){
+        mask *= 10;
+        mask += (extension_only[i] - '0');
+    }
+
+    i = 0;
+    n = strlen(filename_only);
+    for (;i < n;i++){
+        if (mask & (1 << (n - i - 1))){
+            filename[i] = toupper(filename_only[i]);
+        } else {
+            filename[i] = filename_only[i];
+        }
+    }
+
+    filename[i] = '\0';
+
+    printf("NOT VERY SPECIAL : %s\n", filename);
 
     return filename;
 }
@@ -410,8 +454,8 @@ char *get_encryption_path(const char * path){
         } else if (enc & (1 << 2)){
             sprintf(fpath + n, "/%s", encrypt_vignere(encrypt_atbash(jawaban)));
         } else if (enc & (1 << 3)){
-            sprintf(fpath + n, "/%s", jawaban);
-            //sprintf(fpath + n, "/%s", get_special_directory_name(jawaban));
+            //sprintf(fpath + n, "/%s", jawaban);
+            sprintf(fpath + n, "/%s", get_special_directory_name(jawaban));
         }
 
         int enc_temp = get_encryption_mode(jawaban);
@@ -466,8 +510,8 @@ char *get_decryption_path(const char * path){
         } else if (enc & (1 << 2)){
             sprintf(fpath + n, "/%s", decrypt_vignere(encrypt_atbash(jawaban)));
         } else if (enc & (1 << 3)){
-            sprintf(fpath + n, "/%s", jawaban);
-            //sprintf(fpath + n, "/%s", get_special_directory_name(jawaban));
+            //sprintf(fpath + n, "/%s", jawaban);
+            sprintf(fpath + n, "/%s", get_special_directory_original_name(jawaban));
         }
 
         // printf("decprocess : %s -> %d\n", fpath, enc);
@@ -542,8 +586,8 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_
         } else if (enc & (1 << 2)){
             sprintf(temp, "/%s", encrypt_vignere(encrypt_atbash(de->d_name)));
         } else if (enc & (1 << 3)){
-            sprintf(temp, "/%s", de->d_name);
-            //sprintf(temp, "/%s", get_special_directory_name(de->d_name));
+            // sprintf(temp, "/%s", de->d_name);
+            sprintf(temp, "/%s", get_special_directory_name(de->d_name));
         }
 
         memset(&st, 0, sizeof(st));
