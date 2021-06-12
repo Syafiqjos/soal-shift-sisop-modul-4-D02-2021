@@ -25,3 +25,36 @@ int log_info_command(char *command, const char *from, const char *to){
 	struct tm tm = *localtime(&t);
 	char mains[1000];
   ```
+Langkah kedua adalah membuat perulangan if untuk menjalankan logging. kita akan membuat syarat perulangan ini adalah keberadaan tempat tujuan (const char* to). Jika tidak ada tujuan logging, maka buat format logging :
+[Level]::[dd][mm][yyyy]-[HH]:[MM]:[SS]:[CMD]::[DESC]
+dengan DESC = const char* from (asal folder).
+Jika tujuan logging diketahui/ tidak bernilai NULL, maka buat format logging :
+[Level]::[dd][mm][yyyy]-[HH]:[MM]:[SS]:[CMD]::[DESC :: DESC]
+dengan kedua DESC tersebut berisi const char* from dan const char* to.
+Jangan lupa untuk membedakan level pada format sesuai dengan log level masing-masing.
+```
+if(to == NULL){
+        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d:%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from);
+    }else{
+        sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d:%s::%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
+    }
+```
+```
+  if(to == NULL){
+        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d:%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from);
+    }else{
+        sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d:%s::%s::%s\n",
+	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
+    }
+```
+Terakhir, print hasil dari perulangan ini (dalam bentuk string main). Lalu buka file foutput dan masukkan string main ke dalamnya. Lalu return.
+```printf("%s", mains);
+	FILE *foutput = fopen(log_path, "a+");
+	fputs(mains, foutput);
+	fclose(foutput);
+	return 1;
+}
+```
