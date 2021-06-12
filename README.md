@@ -826,7 +826,18 @@ Terakhir, print hasil dari perulangan ini (dalam bentuk string main). Lalu buka 
 Tidak ada kendala untuk soal ini.
 
 # Referensi
-1. asd
-2. asd
-3. asd
-4. asd
+
+## Soal 1
+1. https://www.dcode.fr/atbash-cipher
+
+## Soal 2
+1. https://rot13.com
+2. https://www.dcode.fr/vigenere-cipher
+
+## Soal 3
+1. https://github.com/osxfuse/fuse/blob/master/example/fusexmp.c
+
+## Soal 4
+-
+
+# Terima Kasih
