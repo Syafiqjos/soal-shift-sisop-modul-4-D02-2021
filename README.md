@@ -658,6 +658,8 @@ Dengan hal ini masalah untuk menentukan jenis enkripsi `RX_` dapat diselesaikan.
 
 ### Tujuan
 
+Membuat system FUSE yang dapat melakukan decode terhadap seluruh file yang berada dalam directory yang memiliki nama yang diawali dengan substring `A_is_a_`. Seluruh file atau folder yang telah di decode tersebut akan di encode lagi dengan ketentuan tertentu yang akan dijelaskan nanti. 
+
 ### Pengerjaan
 
 ### Kendala
