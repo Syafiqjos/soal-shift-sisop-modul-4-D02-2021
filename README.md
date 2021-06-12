@@ -838,6 +838,6 @@ Tidak ada kendala untuk soal ini.
 1. https://github.com/osxfuse/fuse/blob/master/example/fusexmp.c
 
 ## Soal 4
--
+Tidak ada. 
 
 # Terima Kasih
