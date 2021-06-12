@@ -662,6 +662,48 @@ Membuat system FUSE yang dapat melakukan decode terhadap seluruh file yang berad
 
 ### Pengerjaan
 
+Pada dasarnya cara penentuan mode enkripsi mirip seperti nomer 1 dan 2. Yang membedakan adalah cara enkripsinya. 
+
+Setiap folder dan files yang berada pada directory special akan di decode. Jadi penentuan mode adalah ketika suatu path dipanggil dengan mode `get_encryption_mode` menghasilkan `1 << 3` maka folder tersebut merupakan directory special. Berikut adalah fungsi untuk membentuk nama file atau folder dari directory special. 
+
+```C
+char *get_special_directory_name(char *path){
+    char *filename = malloc(sizeof(char) * buffer_size);
+    char *filename_only = get_file_name_only(path);
+    char *extension_only = get_extension_name(path);
+
+    //printf("%s\n", filename_only);
+    //printf("%s\n", extension_only);
+
+    int diff = get_lowercase_diff_decimal(filename_only);
+
+    int i = 0;
+    int n = strlen(filename_only);
+    for (;i < n;i++){
+        filename_only[i] = tolower(filename_only[i]);
+    }
+
+    if (strlen(extension_only) == 0){
+        sprintf(filename, "%s.%d", filename_only, diff);
+    } else {
+        sprintf(filename, "%s.%s.%d", filename_only, extension_only, diff);
+    }
+
+    free(filename_only);
+    free(extension_only);
+
+    // printf("SPECIAL : %s\n", filename);
+
+    return filename;
+}
+```
+
+Fungsi diatas akan mengubah suatu nama file atau folder menjadi format tertentu. 
+
+Semisal terdapat file atau folder dengan nama `TesT.txt`. Maka folder tersebut akan berganti nama menjadi `test.txt.9`.
+
+Hal ini karena kita ubah TesT menjadi lowercase semua. Lalu untuk setiap character yang merupakan huruf kapital kita gunakan mask 1, yang tidak kita gunakan mask 0. Sehingga mask akan membentuk `1001` yang merupakan bilangan binary. Jika diubah menjadi decimal akan bernilai 9.
+
 ### Kendala
 
 ## Soal 4
