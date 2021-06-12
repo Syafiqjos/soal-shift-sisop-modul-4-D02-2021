@@ -704,7 +704,66 @@ Semisal terdapat file atau folder dengan nama `TesT.txt`. Maka folder tersebut a
 
 Hal ini karena kita ubah TesT menjadi lowercase semua. Lalu untuk setiap character yang merupakan huruf kapital kita gunakan mask 1, yang tidak kita gunakan mask 0. Sehingga mask akan membentuk `1001` yang merupakan bilangan binary. Jika diubah menjadi decimal akan bernilai 9.
 
+Berikut merupakan fungsi untuk mengubah nama file dari directory special kembali menjadi original. Fungsi ini dipanggil pada `getattr` dan selain `readdir`.
+
+```C
+char *get_special_directory_original_name(char *path){
+    char *filename = malloc(sizeof(char) * buffer_size);
+    char *filename_only = get_file_name_only(path);
+    char *extension_only_name = get_file_name_only(get_extension_name(path));
+    char *extension_only_number = get_extension_name(get_extension_name(path));
+
+    int number_dot = 0;
+
+    int i = 0;
+    int n = strlen(path);
+    for (;i < n;i++){
+        if (path[i] == '.'){
+            number_dot++;
+        }
+    }
+
+    if (number_dot == 1){
+        extension_only_number = extension_only_name;
+    }
+
+    int mask = 0;
+    n = strlen(extension_only_number);
+    i = 0;
+    for (;i < n;i++){
+        mask *= 10;
+        mask += (extension_only_number[i] - '0');
+    }
+
+    i = 0;
+    n = strlen(filename_only);
+    for (;i < n;i++){
+        if (mask & (1 << (n - i - 1))){
+            filename[i] = toupper(filename_only[i]);
+        } else {
+            filename[i] = filename_only[i];
+        }
+    }
+
+    filename[i] = '\0';
+
+    char *ot = malloc(sizeof(char) * buffer_size);
+
+    if (number_dot > 1){
+        sprintf(ot, "%s.%s", filename, extension_only_name);
+    } else {
+        sprintf(ot, "%s", filename);
+    }
+
+    // printf("NOT VERY SPECIAL : %s\n", ot);
+
+    return ot;
+}
+```
+
 ### Kendala
+
+Meskipun kita telah berusaha untuk membenarkan fungsi `get_attr`, tetap saja terdapat error / pemberitahuan pada layar console. Hal ini diketahui karena ketika melakukan decode pada `get_attr`, decode tidak berjalan dengan sempurna. Meskipun muncul error atau pemberitahuan perintah masih berhasil di eksekusi dan menampilkan atau melakukan sesuai perintah yang diinginkan.
 
 ## Soal 4
 
