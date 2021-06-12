@@ -559,9 +559,100 @@ Meskipun kita telah berusaha untuk membenarkan fungsi `get_attr`, tetap saja ter
 
 ### Tujuan
 
+Membuat sistem FUSE pada path `/home/[USER]/Downloads` yang dapat digunakan untuk encode dan decode. Ketika suatu directory memiliki substring "RX_" pada awal nama directory-nya maka directory tersebut akan di encode menggunakan Atbash Cypher dan dilanjut dengan ROT13 Cypher. Ketika ketika terdapat directory yang di rename menjadi `RX_` maka akan diencode menggunakan Atbash Cypher dan dilanjutkan dengan Vignere Cypher dengan string "SISOP" sebagai key nya. Namun ketika directory tersebut di rename menjadi nama yang tidak diawali dengan "RX_" maka directory tersebut akan di decode. Terdapat ketentuan juga bahwa encode an yang terjadi berjalan secara recursive, jadi file atau folder yang di dalam directory tersebut akan ikut ter-encode.
+
 ### Pengerjaan
 
+Pengerjaan nomer 2 tidak jauh dengan nomer 1. Namun terdapat beberapa perbedaan, jadi kami hanya akan membahas perbedaan tersebut.
+
+Sebelum itu berikut merupakan penjelasan dari algoritma enkripsi ROT13 dan Vignere.
+
+--- PENJELASAN ROT13 ---
+
+--- PENJELASAN Vignere ---
+
+Ketika suatu directory memiliki awalan `RX_` maka directory tersebut dapat memiliki 2 kemungkinan encoding yang dapat terjadi.
+1. Encoding menggunakan Atbash + ROT13 jika directory baru dibuat dengan awalan `RX_`.
+2. Encoding menggunakan Atbash + Vignere dengan key="SISOP" jika directory di-rename dengan awalan `RX_`.
+
+Untuk mengatasi kompleksitas ini, kami memutuskan untuk membuat flag sebuah hidden files (file yang memiliki character `.` pada awal namanya). Untuk mendeteksi suatu directory `RX_` menggunakan encoding pertama maka di dalam directory tersebut ada suatu file yang bernama `.status_rx_1`. Sedangkan untuk mendeteksi suatu directory `RX_` menggunakan encoding kedua maka di dalam directory tersebut ada suatu file yang bernama `.status_rx_2`.
+
+Berikut merupakan fungsi untuk mendeteksi jenis encoding `RX_`.
+
+```C
+// 0 == none, 1 == rx 1, 2 == rx 2
+int get_rx_mode(char *path){
+    char fpath[buffer_size];
+    sprintf(fpath, "%s/%s", path, ".status_rx_1");
+    // sprintf(fpath, "%s%s/%s", dirpath, path, ".status_rx_1");
+
+    printf("check rx status : %s\n", fpath);
+
+    if (access(fpath, F_OK) == 0){
+        //printf("rx value : %d\n", 1);
+        return 1;
+    }
+
+    // sprintf(fpath, "%s%s/%s", dirpath, path, ".status_rx_2");
+    sprintf(fpath, "%s/%s", path, ".status_rx_2");
+    if (access(fpath, F_OK) == 0){
+        //printf("rx value : %d\n", 2);
+        return 2;
+    }
+
+    return 0;
+}
+```
+
+Fungsi diatas akan digunakan pada fungsi berikut.
+
+```C
+//mode << 0 == none,1 << 0 = atoz,1 << 1 = rx_1, << 2 = rx_2, << 3 = special
+int get_encryption_mode(char *path){
+    if (strlen(path) == 0){
+        return 0;
+    }
+    char *temp = path;
+
+    int mode = 0;
+
+    //printf("REC : %s -> %d\n", fname, mode);
+    char *tok = strtok(temp, "/");
+    char fpath[buffer_size];
+    fpath[0] = 0;
+
+    sprintf(fpath, "%s", dirpath);
+
+    while (tok){
+        sprintf(fpath + strlen(fpath), "/%s", tok);
+
+        int rx_mode = get_rx_mode(fpath);
+
+        printf("kok ngebug : %d\n", rx_mode);
+
+        if (strstr(tok, "A_is_a_") == tok){
+            mode |= 1 << 3;
+            return mode;
+        }
+        else if (strstr(tok, "AtoZ_") == tok){
+            mode |= 1 << 0;
+        } else if (strstr(tok, "RX_") == tok && rx_mode == 1){
+            mode |= 1 << 1;
+        } else if (strstr(tok, "RX_") == tok && rx_mode == 2){
+            mode |= 1 << 2;
+        }
+        tok = strtok(NULL, "/");
+    }
+
+    return mode;
+}
+```
+
+Dengan hal ini masalah untuk menentukan jenis enkripsi `RX_` dapat diselesaikan.
+
 ### Kendala
+1. Meskipun kita telah berusaha untuk membenarkan fungsi `get_attr`, tetap saja terdapat error / pemberitahuan pada layar console. Hal ini diketahui karena ketika melakukan decode pada `get_attr`, decode tidak berjalan dengan sempurna. Meskipun muncul error atau pemberitahuan perintah masih berhasil di eksekusi dan menampilkan atau melakukan sesuai perintah yang diinginkan.
+2. Pada nomer 2e belum dapat diselesaikan karena kurangnya waktu dan ide cara pengerjaan yang dapat digunakan untuk mengatasi hal tersebut. Meskipun begitu terdapat ide untuk melakukan manipulasi file pada bagian `readdir` tetapi karena kurang petunjuk kami ragu untuk mengimplementasikannya.
 
 ## Soal 3 (A_is_a_folder)
 
