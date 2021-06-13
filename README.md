@@ -188,7 +188,13 @@ char *get_decryption_path(const char * path){
 
 Untuk nomer 1 sendiri, berikut merupakan fungsi untuk melakukan enkripsi menggunakan algoritma Atbash.
 
---- PENJELASAN ATBASH ---
+Atbash Chiper biasa dikenal dengan _mirror chiper_ atau _reverse alphabet_ 
+![image](https://user-images.githubusercontent.com/62937814/121802961-5a16ad00-cc69-11eb-9bd4-c076b4caeee5.png)
+source : https://en.wikipedia.org/wiki/Atbash 
+
+Singkatnya, huruf pertama akan menjadi huruf terakhir. Urutan dalam alphabet akan terbalik dari Z hingga A.
+
+Berikut adalah Fungsi untuk memanggil Atbash Chiper. Karena algoritma ini merupakan _reverse_, maka baik enkripsi maupun dekripsi nya akan menggunakan algoritma/langkah yang sama.
 
 ```C
 char *encrypt_atbash (char* str){
@@ -568,8 +574,21 @@ Pengerjaan nomer 2 tidak jauh dengan nomer 1. Namun terdapat beberapa perbedaan,
 Sebelum itu berikut merupakan penjelasan dari algoritma enkripsi ROT13 dan Vignere.
 
 --- PENJELASAN ROT13 ---
+Enkripsi ROT 13 merupakan penggantian huruf dengan huruf lain yang urutannya ditambah 13.
 
---- PENJELASAN Vignere ---
+![image](https://user-images.githubusercontent.com/62937814/121803110-1ff9db00-cc6a-11eb-8068-398d30ea88a6.png)
+source : https://en.wikipedia.org/wiki/ROT13
+
+Contoh, apabila ada input "AKU" maka akan terenkripsi menjadi "NXH". Karena berlaku juga sebaliknya, maka baik enkripsi maupun dekripsi hanya membutuhkan 1 fungsi saja.
+
+--- PENJELASAN Vigenere ---
+Enkripsi menggunakan algoritma Vigenere dibutuhkan sebuah _key_. Dimana _key_ ini nanti akan berfungsi sebagai penjumlah enkripsi. Contoh apabila kita mempunyai sebuah kata "SAYA" dan _key_ nya adalah "AKU". Maka untuk huruf S (value = 18) akan dijumlah dengan huruf pertama pada _key_ yaitu A (value = 0) dan dijumlah menjadi (18 + 0 = 18) akan tetap menjadi S. Dan total enkripsinya akan menjadi "SQEA".
+
+![image](https://user-images.githubusercontent.com/62937814/121803463-eaee8800-cc6b-11eb-8c69-1fa3f755854a.png)
+source: https://www.thecrazyprogrammer.com/2017/08/vigenere-cipher-c-c.html
+
+Untuk memudahkan, bisa menggunakan tabel Vigenere Chiper
+
 
 Ketika suatu directory memiliki awalan `RX_` maka directory tersebut dapat memiliki 2 kemungkinan encoding yang dapat terjadi.
 1. Encoding menggunakan Atbash + ROT13 jika directory baru dibuat dengan awalan `RX_`.
@@ -832,7 +851,8 @@ Tidak ada kendala untuk soal ini.
 
 ## Soal 2
 1. https://rot13.com
-2. https://www.dcode.fr/vigenere-cipher
+2. https://www.dcode.fr/rot-13-cipher
+3. https://www.dcode.fr/vigenere-cipher
 
 ## Soal 3
 1. https://github.com/osxfuse/fuse/blob/master/example/fusexmp.c
