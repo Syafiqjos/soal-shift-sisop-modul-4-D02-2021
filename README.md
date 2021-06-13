@@ -573,7 +573,6 @@ Pengerjaan nomer 2 tidak jauh dengan nomer 1. Namun terdapat beberapa perbedaan,
 
 Sebelum itu berikut merupakan penjelasan dari algoritma enkripsi ROT13 dan Vignere.
 
---- PENJELASAN ROT13 ---
 Enkripsi ROT 13 merupakan penggantian huruf dengan huruf lain yang urutannya ditambah 13.
 
 ![image](https://user-images.githubusercontent.com/62937814/121803110-1ff9db00-cc6a-11eb-8068-398d30ea88a6.png)
@@ -581,14 +580,12 @@ source : https://en.wikipedia.org/wiki/ROT13
 
 Contoh, apabila ada input "AKU" maka akan terenkripsi menjadi "NXH". Karena berlaku juga sebaliknya, maka baik enkripsi maupun dekripsi hanya membutuhkan 1 fungsi saja.
 
---- PENJELASAN Vigenere ---
 Enkripsi menggunakan algoritma Vigenere dibutuhkan sebuah _key_. Dimana _key_ ini nanti akan berfungsi sebagai penjumlah enkripsi. Contoh apabila kita mempunyai sebuah kata "SAYA" dan _key_ nya adalah "AKU". Maka untuk huruf S (value = 18) akan dijumlah dengan huruf pertama pada _key_ yaitu A (value = 0) dan dijumlah menjadi (18 + 0 = 18) akan tetap menjadi S. Dan total enkripsinya akan menjadi "SQEA".
 
 ![image](https://user-images.githubusercontent.com/62937814/121803463-eaee8800-cc6b-11eb-8c69-1fa3f755854a.png)
 source: https://www.thecrazyprogrammer.com/2017/08/vigenere-cipher-c-c.html
 
 Untuk memudahkan, bisa menggunakan tabel Vigenere Chiper
-
 
 Ketika suatu directory memiliki awalan `RX_` maka directory tersebut dapat memiliki 2 kemungkinan encoding yang dapat terjadi.
 1. Encoding menggunakan Atbash + ROT13 jika directory baru dibuat dengan awalan `RX_`.
@@ -794,25 +791,30 @@ Membuat log system yang akan mendata setiap system call yang digunakan. Tujuanny
 
 Untuk menyelesaikan tugas berikut ini, kita harus membuat 2 log level pada log system, yakni WARNING dan INFO. Bentuk kode yang akan dibuat untuk kedua log level ini bisa dikatakan mirip, sehingga kita akan mengggunakan dasar pembuatan yang sama.
 Pertama, buat 2 fungsi void, yakni log_info_command dan log_warning_command, isi dari kedua fungsi ini sama, yakni (char* command, const char* from, const char* to). Berikutnya, masukkan variabel time_t untuk menunjukkan waktu pada log, struct tm tm untuk menunjukkan waktu sekarang dan string main [1000].
+
 ```C
 int log_info_command(char *command, const char *from, const char *to){
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	char mains[1000];
   ```
+
 ```C
 int log_warning_command(char *command, const char *from, const char *to){
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	char mains[1000];
 ```
+
 Langkah kedua adalah membuat perulangan if untuk menjalankan logging. kita akan membuat syarat perulangan ini adalah keberadaan tempat tujuan (const char* to). Jika tidak ada tujuan logging, maka buat format logging :
 [Level]::[dd][mm][yyyy]-[HH]:[MM]:[SS]:[CMD]::[DESC]
 dengan DESC = const char* from (asal folder).
 Jika tujuan logging diketahui/ tidak bernilai NULL, maka buat format logging :
 [Level]::[dd][mm][yyyy]-[HH]:[MM]:[SS]:[CMD]::[DESC :: DESC]
 dengan kedua DESC tersebut berisi const char* from dan const char* to.
+
 Jangan lupa untuk membedakan level pada format sesuai dengan log level masing-masing.
+
 ```C
 if(to == NULL){
         sprintf(mains,"INFO::%02d%02d%02d-%02d:%02d:%02d:%s::%s\n",
@@ -822,6 +824,7 @@ if(to == NULL){
 	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
     }
 ```
+
 ```C
   if(to == NULL){
         sprintf(mains,"WARNING::%02d%02d%02d-%02d:%02d:%02d:%s::%s\n",
@@ -831,7 +834,9 @@ if(to == NULL){
 	tm.tm_mday, tm.tm_mon + 1, 1900 + tm.tm_year, tm.tm_hour, tm.tm_min, tm.tm_sec, command, from, to);
     }
 ```
+
 Terakhir, print hasil dari perulangan ini (dalam bentuk string main). Lalu buka file foutput dan masukkan string main ke dalamnya. Lalu return.
+
 ```C
 	printf("%s", mains);
 	FILE *foutput = fopen(log_path, "a+");
